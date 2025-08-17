@@ -48,7 +48,14 @@ CLEAN_GENRES = [
     'folk', 'world', 'ambient', 'chill', 'lounge', 'electronic', 'dance',
     'hip hop', 'r&b', 'soul', 'blues', 'gospel', 'christian', 'spiritual',
     'educational', 'sports', 'business', 'culture', 'community', 'public',
-    'information', 'entertainment', 'family', 'kids', 'children'
+    'information', 'entertainment', 'family', 'kids', 'children',
+    'bollywood', 'bhangra', 'indian', 'hindi', 'punjabi', 'desi', 'filmi',
+    'asian', 'international', 'ethnic', 'multicultural'
+]
+
+# Priority genres that should be boosted in search results
+PRIORITY_GENRES = [
+    'bollywood', 'bhangra', 'indian', 'hindi', 'punjabi', 'news', 'music', 'talk'
 ]
 
 def is_station_clean(station):
