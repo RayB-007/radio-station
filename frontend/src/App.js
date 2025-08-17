@@ -234,7 +234,12 @@ const App = () => {
               {filteredStations.length === 0 && !isLoading && (
                 <div className="no-results">
                   <p>No stations found for "{searchTerm}"</p>
-                  <p className="help-text">Try searching for countries, genres, or frequencies like "92.3 FM"</p>
+                  <p className="help-text">Try searching for:</p>
+                  <div className="suggestions">
+                    <span>• Countries: "Germany", "India", "USA"</span>
+                    <span>• Genres: "Bollywood", "Bhangra", "Jazz", "News"</span>
+                    <span>• Frequencies: "92.3 FM", "101.5"</span>
+                  </div>
                 </div>
               )}
             </>
