@@ -201,11 +201,66 @@ const App = () => {
               <div className="results-info">
                 {searchTerm && (
                   <p className="search-results">
-                    Found {filteredStations.length} stations 
+                    {isSearching ? 'Searching...' : `Found ${filteredStations.length} stations`}
                     {searchTerm.match(/\d+\.?\d*/) ? ' matching frequency' : ''}
                   </p>
                 )}
               </div>
+              
+              {/* Beatles Dedicated Section */}
+              {!searchTerm && (
+                <div className="featured-section">
+                  <h3 className="section-title">🎸 Beatles & Classic Rock</h3>
+                  <div className="featured-buttons">
+                    <button 
+                      className="featured-btn"
+                      onClick={() => setSearchTerm('Beatles')}
+                    >
+                      🎵 Beatles Music
+                    </button>
+                    <button 
+                      className="featured-btn"
+                      onClick={() => setSearchTerm('Classic Rock')}
+                    >
+                      🎸 Classic Rock
+                    </button>
+                    <button 
+                      className="featured-btn"
+                      onClick={() => setSearchTerm('60s')}
+                    >
+                      📻 60s Hits
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {/* Bollywood Quick Access Section */}
+              {!searchTerm && (
+                <div className="featured-section">
+                  <h3 className="section-title">🎭 Bollywood & Indian Music</h3>
+                  <div className="featured-buttons">
+                    <button 
+                      className="featured-btn bollywood"
+                      onClick={() => setSearchTerm('Bollywood')}
+                    >
+                      🎬 Bollywood Hits
+                    </button>
+                    <button 
+                      className="featured-btn bollywood"
+                      onClick={() => setSearchTerm('Bhangra')}
+                    >
+                      💃 Bhangra Dance
+                    </button>
+                    <button 
+                      className="featured-btn bollywood"
+                      onClick={() => setSearchTerm('Hindi')}
+                    >
+                      🇮🇳 Hindi Songs
+                    </button>
+                  </div>
+                </div>
+              )}
+              
               {filteredStations.map((station) => (
                 <Card key={station.uuid} className="station-card">
                   <CardContent className="station-content">
