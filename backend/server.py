@@ -189,7 +189,7 @@ async def get_radio_stations():
 
 @app.get("/api/stations/clean", response_model=List[RadioStation])
 async def get_clean_stations():
-    """Get specifically filtered clean stations"""
+    """Get specifically filtered clean stations with Bollywood and Bhangra priority"""
     try:
         # Use multiple approaches to get diverse clean stations
         base_url = "https://de1.api.radio-browser.info"
@@ -209,11 +209,35 @@ async def get_clean_stations():
         if response2.status_code == 200:
             all_stations.extend(response2.json())
         
-        # Get news and talk stations
-        url3 = f"{base_url}/json/stations/bytag/news?limit=30"
+        # Get Indian stations specifically
+        url3 = f"{base_url}/json/stations/bycountry/India?limit=40"
         response3 = requests.get(url3, headers=headers, timeout=10)
         if response3.status_code == 200:
             all_stations.extend(response3.json())
+        
+        # Search for Bollywood stations
+        url4 = f"{base_url}/json/stations/search?name=bollywood&limit=30"
+        response4 = requests.get(url4, headers=headers, timeout=10)
+        if response4.status_code == 200:
+            all_stations.extend(response4.json())
+        
+        # Search for Bhangra and Hindi stations
+        url5 = f"{base_url}/json/stations/search?name=bhangra&limit=20"
+        response5 = requests.get(url5, headers=headers, timeout=10)
+        if response5.status_code == 200:
+            all_stations.extend(response5.json())
+        
+        # Search for Hindi stations
+        url6 = f"{base_url}/json/stations/search?name=hindi&limit=25"
+        response6 = requests.get(url6, headers=headers, timeout=10)
+        if response6.status_code == 200:
+            all_stations.extend(response6.json())
+        
+        # Get news and talk stations
+        url7 = f"{base_url}/json/stations/bytag/news?limit=30"
+        response7 = requests.get(url7, headers=headers, timeout=10)
+        if response7.status_code == 200:
+            all_stations.extend(response7.json())
         
         # Remove duplicates by UUID
         unique_stations = {}
@@ -229,20 +253,19 @@ async def get_clean_stations():
             if not station.get('url') or not station.get('name'):
                 continue
                 
-            # Skip very low quality stations
-            if station.get('bitrate', 0) < 64 and station.get('votes', 0) < 10:
+            # Skip very low quality stations (unless they're Bollywood/Indian)
+            is_indian_content = any(keyword in station.get('name', '').lower() + station.get('tags', '').lower() 
+                                  for keyword in ['bollywood', 'bhangra', 'hindi', 'punjabi', 'indian'])
+            
+            if not is_indian_content and station.get('bitrate', 0) < 64 and station.get('votes', 0) < 10:
                 continue
             
-            # Apply strict content filtering
+            # Apply content filtering
             if not is_station_clean(station):
                 continue
             
-            # Prefer stations with frequency in name or clean genres
-            priority_score = 0
-            if has_frequency_in_name(station.get('name', '')):
-                priority_score += 10
-            if any(genre in station.get('tags', '').lower() for genre in ['news', 'music', 'talk', 'public']):
-                priority_score += 5
+            # Calculate priority score
+            priority_score = get_station_priority_score(station)
             
             filtered_station = RadioStation(
                 uuid=station.get('stationuuid', ''),
@@ -252,15 +275,15 @@ async def get_clean_stations():
                 language=station.get('language', 'Unknown'),
                 tags=station.get('tags', ''),
                 bitrate=station.get('bitrate', 0),
-                votes=station.get('votes', 0) + priority_score
+                votes=priority_score  # Use priority score instead of original votes
             )
             filtered_stations.append(filtered_station)
         
-        # Sort by enhanced votes (includes priority score)
+        # Sort by priority score (includes Bollywood/Bhangra boost)
         filtered_stations.sort(key=lambda x: x.votes, reverse=True)
         
-        logger.info(f"Fetched {len(filtered_stations)} clean filtered stations")
-        return filtered_stations[:60]  # Return top 60 clean stations
+        logger.info(f"Fetched {len(filtered_stations)} clean stations with Bollywood/Bhangra priority")
+        return filtered_stations[:70]  # Return top 70 stations including Bollywood/Bhangra
         
     except Exception as e:
         logger.error(f"Error fetching clean stations: {e}")
