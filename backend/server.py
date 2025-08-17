@@ -44,10 +44,10 @@ async def get_radio_stations():
     """Fetch popular radio stations from Radio-Browser API"""
     try:
         # Use Radio-Browser API to get popular stations
-        base_url = "https://at1.api.radio-browser.info"
+        base_url = "https://de1.api.radio-browser.info"
         
         # Get top voted stations with good quality
-        url = f"{base_url}/json/stations/topvote/100"
+        url = f"{base_url}/json/stations/topvote?limit=100"
         
         headers = {
             'User-Agent': 'GlobalRadioApp/1.0'
