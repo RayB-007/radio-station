@@ -22,17 +22,52 @@ const App = () => {
     fetchStations();
   }, []);
 
+  // Debounced search effect
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      const timeoutId = setTimeout(() => {
+        performSearch(searchTerm);
+      }, 500); // 500ms delay
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Reset to all stations when search is cleared
+      setStations(allStations);
+      setIsSearching(false);
+    }
+  }, [searchTerm, allStations]);
+
   const fetchStations = async () => {
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
       const response = await fetch(`${backendUrl}/api/stations/clean`);
       const data = await response.json();
-      setStations(data.slice(0, 60)); // Increased to 60 clean stations
+      setAllStations(data);
+      setStations(data);
       setIsLoading(false);
     } catch (error) {
       console.error('Error fetching stations:', error);
       setIsLoading(false);
     }
+  };
+
+  const performSearch = async (query) => {
+    setIsSearching(true);
+    try {
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const response = await fetch(`${backendUrl}/api/stations/search?query=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      setStations(data);
+    } catch (error) {
+      console.error('Error searching stations:', error);
+      // Fallback to client-side filtering
+      const filtered = allStations.filter(station =>
+        station.name.toLowerCase().includes(query.toLowerCase()) ||
+        station.country.toLowerCase().includes(query.toLowerCase()) ||
+        (station.tags && station.tags.toLowerCase().includes(query.toLowerCase()))
+      );
+      setStations(filtered);
+    }
+    setIsSearching(false);
   };
 
   const playStation = async (station) => {
