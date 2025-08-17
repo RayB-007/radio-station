@@ -518,6 +518,25 @@ body {
 .help-text {
   font-size: 0.875rem;
   color: #64748b;
+  margin-bottom: 1rem;
+}
+
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  text-align: left;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.suggestions span {
+  padding: 0.25rem 0.5rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 0.25rem;
+  border-left: 3px solid #3b82f6;
 }
 
 /* Player Controls */
