@@ -165,7 +165,7 @@ const App = () => {
             <Search className="search-icon" />
             <Input
               type="text"
-              placeholder="Search stations, countries, or frequencies (e.g., 92.3 FM)..."
+              placeholder="Search stations, countries, frequencies (92.3 FM), or try 'Bollywood', 'Bhangra'..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="search-input"
