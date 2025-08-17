@@ -418,6 +418,86 @@ async def get_bollywood_stations():
         logger.error(f"Error fetching Bollywood stations: {e}")
         return []
 
+@app.get("/api/stations/search")
+async def search_stations(query: str = "", country: str = "", limit: int = 30):
+    """Search radio stations by name, country, or frequency"""
+    try:
+        base_url = "https://de1.api.radio-browser.info"
+        headers = {'User-Agent': 'GlobalRadioApp/1.0'}
+        
+        # Check if query contains frequency pattern
+        frequency_pattern = r'(\d{2,3}\.?\d*)\s*(fm|am|khz|mhz)?'
+        is_frequency_search = bool(re.search(frequency_pattern, query.lower())) if query else False
+        
+        # Check for Bollywood/Bhangra search terms
+        bollywood_terms = ['bollywood', 'bhangra', 'hindi', 'punjabi', 'indian', 'desi']
+        is_bollywood_search = any(term in query.lower() for term in bollywood_terms) if query else False
+        
+        if is_bollywood_search:
+            # Redirect to Bollywood endpoint for better results
+            return await get_bollywood_stations()
+        elif is_frequency_search:
+            # For frequency searches, get more stations and filter locally
+            url = f"{base_url}/json/stations/topvote?limit=200"
+        elif query:
+            # Search by name
+            url = f"{base_url}/json/stations/byname/{query}?limit={limit*2}"
+        elif country:
+            # Search by country
+            url = f"{base_url}/json/stations/bycountry/{country}?limit={limit*2}"
+        else:
+            # Get popular clean stations
+            return await get_clean_stations()
+        
+        response = requests.get(url, headers=headers, timeout=15)
+        response.raise_for_status()
+        
+        stations_data = response.json()
+        
+        # Format and filter stations
+        filtered_stations = []
+        for station in stations_data:
+            if not station.get('url') or not station.get('name'):
+                continue
+            
+            # Apply content filtering
+            if not is_station_clean(station):
+                continue
+            
+            # For frequency searches, filter by frequency in name
+            if is_frequency_search:
+                station_name = station.get('name', '').lower()
+                query_freq = re.search(frequency_pattern, query.lower())
+                if query_freq:
+                    freq_number = query_freq.group(1)
+                    if freq_number not in station_name:
+                        continue
+            
+            priority_score = get_station_priority_score(station)
+                
+            filtered_station = RadioStation(
+                uuid=station.get('stationuuid', ''),
+                name=station.get('name', 'Unknown Station'),
+                url=station.get('url', ''),
+                country=station.get('country', 'Unknown'),
+                language=station.get('language', 'Unknown'),
+                tags=station.get('tags', ''),
+                bitrate=station.get('bitrate', 0),
+                votes=priority_score
+            )
+            filtered_stations.append(filtered_station)
+        
+        # Sort by priority score and limit results
+        filtered_stations.sort(key=lambda x: x.votes, reverse=True)
+        result = filtered_stations[:limit]
+        
+        logger.info(f"Search '{query}' returned {len(result)} clean stations")
+        return result
+        
+    except Exception as e:
+        logger.error(f"Search error: {e}")
+        raise HTTPException(status_code=500, detail="Search failed")
+
 # Health check endpoint
 @app.get("/api/health")
 async def health_check():
