@@ -303,13 +303,14 @@ const App = () => {
                   </CardContent>
                 </Card>
               ))}
-              {filteredStations.length === 0 && !isLoading && (
+              {filteredStations.length === 0 && !isLoading && !isSearching && searchTerm && (
                 <div className="no-results">
                   <p>No stations found for "{searchTerm}"</p>
                   <p className="help-text">Try searching for:</p>
                   <div className="suggestions">
                     <span>• Countries: "Germany", "India", "USA"</span>
                     <span>• Genres: "Bollywood", "Bhangra", "Jazz", "News"</span>
+                    <span>• Artists: "Beatles", "Classic Rock"</span>
                     <span>• Frequencies: "92.3 FM", "101.5"</span>
                   </div>
                 </div>
