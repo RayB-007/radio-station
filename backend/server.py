@@ -339,76 +339,84 @@ async def stream_radio(station_url: str):
         logger.error(f"Unexpected streaming error: {e}")
         raise HTTPException(status_code=500, detail="Streaming error")
 
-@app.get("/api/stations/search")
-async def search_stations(query: str = "", country: str = "", limit: int = 30):
-    """Search radio stations by name, country, or frequency"""
+@app.get("/api/stations/bollywood", response_model=List[RadioStation])
+async def get_bollywood_stations():
+    """Get Bollywood and Bhangra music stations specifically"""
     try:
         base_url = "https://de1.api.radio-browser.info"
         headers = {'User-Agent': 'GlobalRadioApp/1.0'}
         
-        # Check if query contains frequency pattern
-        frequency_pattern = r'(\d{2,3}\.?\d*)\s*(fm|am|khz|mhz)?'
-        is_frequency_search = bool(re.search(frequency_pattern, query.lower())) if query else False
+        all_stations = []
         
-        if is_frequency_search:
-            # For frequency searches, get more stations and filter locally
-            url = f"{base_url}/json/stations/topvote?limit=200"
-        elif query:
-            # Search by name
-            url = f"{base_url}/json/stations/byname/{query}?limit={limit*2}"
-        elif country:
-            # Search by country
-            url = f"{base_url}/json/stations/bycountry/{country}?limit={limit*2}"
-        else:
-            # Get popular clean stations
-            return await get_clean_stations()
+        # Search for Bollywood stations
+        bollywood_searches = ['bollywood', 'hindi', 'bhangra', 'punjabi', 'indian', 'desi']
         
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
+        for search_term in bollywood_searches:
+            url = f"{base_url}/json/stations/search?name={search_term}&limit=20"
+            try:
+                response = requests.get(url, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    all_stations.extend(response.json())
+            except:
+                continue
         
-        stations_data = response.json()
+        # Get Indian stations
+        try:
+            url = f"{base_url}/json/stations/bycountry/India?limit=50"
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                all_stations.extend(response.json())
+        except:
+            pass
         
-        # Format and filter stations
+        # Remove duplicates
+        unique_stations = {}
+        for station in all_stations:
+            uuid = station.get('stationuuid')
+            if uuid and uuid not in unique_stations:
+                unique_stations[uuid] = station
+        
+        # Filter and format
         filtered_stations = []
-        for station in stations_data:
+        for station in unique_stations.values():
             if not station.get('url') or not station.get('name'):
                 continue
             
-            # Apply content filtering
             if not is_station_clean(station):
                 continue
             
-            # For frequency searches, filter by frequency in name
-            if is_frequency_search:
-                station_name = station.get('name', '').lower()
-                query_freq = re.search(frequency_pattern, query.lower())
-                if query_freq:
-                    freq_number = query_freq.group(1)
-                    if freq_number not in station_name:
-                        continue
+            # Check if it's actually Bollywood/Indian content
+            name = station.get('name', '').lower()
+            tags = station.get('tags', '').lower()
+            country = station.get('country', '').lower()
+            
+            is_bollywood = any(keyword in name + tags + country 
+                             for keyword in ['bollywood', 'bhangra', 'hindi', 'punjabi', 'indian', 'desi', 'filmi'])
+            
+            if is_bollywood or 'india' in country:
+                priority_score = get_station_priority_score(station)
                 
-            filtered_station = RadioStation(
-                uuid=station.get('stationuuid', ''),
-                name=station.get('name', 'Unknown Station'),
-                url=station.get('url', ''),
-                country=station.get('country', 'Unknown'),
-                language=station.get('language', 'Unknown'),
-                tags=station.get('tags', ''),
-                bitrate=station.get('bitrate', 0),
-                votes=station.get('votes', 0)
-            )
-            filtered_stations.append(filtered_station)
+                filtered_station = RadioStation(
+                    uuid=station.get('stationuuid', ''),
+                    name=station.get('name', 'Unknown Station'),
+                    url=station.get('url', ''),
+                    country=station.get('country', 'Unknown'),
+                    language=station.get('language', 'Unknown'),
+                    tags=station.get('tags', ''),
+                    bitrate=station.get('bitrate', 0),
+                    votes=priority_score
+                )
+                filtered_stations.append(filtered_station)
         
-        # Sort by votes and limit results
+        # Sort by priority score
         filtered_stations.sort(key=lambda x: x.votes, reverse=True)
-        result = filtered_stations[:limit]
         
-        logger.info(f"Search '{query}' returned {len(result)} clean stations")
-        return result
+        logger.info(f"Found {len(filtered_stations)} Bollywood/Bhangra stations")
+        return filtered_stations[:30]
         
     except Exception as e:
-        logger.error(f"Search error: {e}")
-        raise HTTPException(status_code=500, detail="Search failed")
+        logger.error(f"Error fetching Bollywood stations: {e}")
+        return []
 
 # Health check endpoint
 @app.get("/api/health")
