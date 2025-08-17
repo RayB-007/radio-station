@@ -8,12 +8,14 @@ import './App.css';
 
 const App = () => {
   const [stations, setStations] = useState([]);
+  const [allStations, setAllStations] = useState([]);
   const [currentStation, setCurrentStation] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [volume, setVolume] = useState(0.7);
   const [isMuted, setIsMuted] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const audioRef = useRef(null);
 
   useEffect(() => {
