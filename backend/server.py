@@ -147,18 +147,18 @@ async def stream_radio(station_url: str):
 async def search_stations(query: str = "", country: str = "", limit: int = 20):
     """Search radio stations by name or country"""
     try:
-        base_url = "https://at1.api.radio-browser.info"
+        base_url = "https://de1.api.radio-browser.info"
         headers = {'User-Agent': 'GlobalRadioApp/1.0'}
         
         if query:
             # Search by name
-            url = f"{base_url}/json/stations/byname/{query}"
+            url = f"{base_url}/json/stations/byname/{query}?limit={limit}"
         elif country:
             # Search by country
-            url = f"{base_url}/json/stations/bycountry/{country}"
+            url = f"{base_url}/json/stations/bycountry/{country}?limit={limit}"
         else:
             # Get popular stations
-            url = f"{base_url}/json/stations/topvote/{limit}"
+            url = f"{base_url}/json/stations/topvote?limit={limit}"
         
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
