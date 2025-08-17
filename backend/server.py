@@ -433,26 +433,78 @@ async def search_stations(query: str = "", country: str = "", limit: int = 30):
         bollywood_terms = ['bollywood', 'bhangra', 'hindi', 'punjabi', 'indian', 'desi']
         is_bollywood_search = any(term in query.lower() for term in bollywood_terms) if query else False
         
+        # Check for Beatles/Classic Rock search terms
+        beatles_terms = ['beatles', 'classic rock', '60s', '70s', 'rock']
+        is_beatles_search = any(term in query.lower() for term in beatles_terms) if query else False
+        
         if is_bollywood_search:
             # Redirect to Bollywood endpoint for better results
             return await get_bollywood_stations()
+        elif is_beatles_search:
+            # Special handling for Beatles and classic rock
+            all_stations = []
+            
+            # Search for Beatles specifically
+            if 'beatles' in query.lower():
+                url = f"{base_url}/json/stations/search?name=beatles&limit=20"
+                try:
+                    response = requests.get(url, headers=headers, timeout=10)
+                    if response.status_code == 200:
+                        all_stations.extend(response.json())
+                except:
+                    pass
+            
+            # Search for classic rock
+            classic_rock_terms = ['classic rock', 'oldies', '60s', '70s', 'rock']
+            for term in classic_rock_terms:
+                if term in query.lower():
+                    url = f"{base_url}/json/stations/search?tag={term.replace(' ', '%20')}&limit=15"
+                    try:
+                        response = requests.get(url, headers=headers, timeout=10)
+                        if response.status_code == 200:
+                            all_stations.extend(response.json())
+                    except:
+                        continue
+            
+            # Also search by name for better coverage
+            url = f"{base_url}/json/stations/search?name={query}&limit=20"
+            try:
+                response = requests.get(url, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    all_stations.extend(response.json())
+            except:
+                pass
+            
+            # Remove duplicates
+            unique_stations = {}
+            for station in all_stations:
+                uuid = station.get('stationuuid')
+                if uuid and uuid not in unique_stations:
+                    unique_stations[uuid] = station
+            
+            stations_data = list(unique_stations.values())
+            
         elif is_frequency_search:
             # For frequency searches, get more stations and filter locally
             url = f"{base_url}/json/stations/topvote?limit=200"
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            stations_data = response.json()
         elif query:
             # Search by name
             url = f"{base_url}/json/stations/byname/{query}?limit={limit*2}"
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            stations_data = response.json()
         elif country:
             # Search by country
             url = f"{base_url}/json/stations/bycountry/{country}?limit={limit*2}"
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            stations_data = response.json()
         else:
             # Get popular clean stations
             return await get_clean_stations()
-        
-        response = requests.get(url, headers=headers, timeout=15)
-        response.raise_for_status()
-        
-        stations_data = response.json()
         
         # Format and filter stations
         filtered_stations = []
