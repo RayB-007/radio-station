@@ -62,6 +62,7 @@ def is_station_clean(station):
     """Filter out inappropriate content stations"""
     name = station.get('name', '').lower()
     tags = station.get('tags', '').lower()
+    country = station.get('country', '').lower()
     
     # Check for inappropriate keywords
     for keyword in INAPPROPRIATE_KEYWORDS:
@@ -74,6 +75,12 @@ def is_station_clean(station):
             if clean_genre in tags:
                 return True
     
+    # Special priority for Bollywood/Indian content
+    bollywood_keywords = ['bollywood', 'bhangra', 'hindi', 'punjabi', 'indian', 'desi', 'filmi']
+    for keyword in bollywood_keywords:
+        if keyword in name or keyword in tags or keyword in country:
+            return True
+    
     # Check for common clean indicators
     clean_indicators = ['fm', 'am', 'radio', 'station', 'news', 'music', 'public']
     for indicator in clean_indicators:
@@ -82,6 +89,35 @@ def is_station_clean(station):
     
     # Default: allow if no red flags found
     return True
+
+def get_station_priority_score(station):
+    """Calculate priority score for station ranking"""
+    name = station.get('name', '').lower()
+    tags = station.get('tags', '').lower()
+    country = station.get('country', '').lower()
+    
+    score = station.get('votes', 0)
+    
+    # Boost Bollywood and Bhangra stations significantly
+    bollywood_boost = ['bollywood', 'bhangra', 'hindi', 'punjabi', 'indian', 'desi']
+    for keyword in bollywood_boost:
+        if keyword in name or keyword in tags:
+            score += 100  # Major boost for Bollywood/Bhangra
+    
+    # Boost Indian stations
+    if 'india' in country or 'indian' in country:
+        score += 50
+    
+    # Boost priority genres
+    for genre in PRIORITY_GENRES:
+        if genre in tags:
+            score += 25
+    
+    # Quality boost
+    if station.get('bitrate', 0) > 128:
+        score += 10
+    
+    return score
 
 def has_frequency_in_name(station_name):
     """Check if station name contains frequency information"""
