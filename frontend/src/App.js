@@ -120,27 +120,7 @@ const App = () => {
   };
 
   // Enhanced search to include frequency matching
-  const filteredStations = stations.filter(station => {
-    const searchLower = searchTerm.toLowerCase();
-    const stationName = station.name.toLowerCase();
-    const stationCountry = station.country.toLowerCase();
-    const stationTags = (station.tags || '').toLowerCase();
-    
-    // Check for frequency patterns (like 92.3, 101.5 FM, etc.)
-    const frequencyPattern = /(\d{2,3}\.?\d*)\s*(fm|am|khz|mhz)?/i;
-    const searchFrequency = searchTerm.match(frequencyPattern);
-    
-    if (searchFrequency) {
-      // If user typed a frequency, search in station name for that frequency
-      const frequency = searchFrequency[1];
-      return stationName.includes(frequency);
-    }
-    
-    // Regular text search
-    return stationName.includes(searchLower) || 
-           stationCountry.includes(searchLower) ||
-           stationTags.includes(searchLower);
-  });
+  const filteredStations = stations; // Now using API search instead of client-side filtering
 
   return (
     <div className="app-container">
